@@ -1,0 +1,63 @@
+1. Создать все необходимые внешние ключи и диаграмму отношений.
+    Приложены файлы fk.sql и task_1.png
+2. Создать и заполнить таблицы лайков и постов.
+    Приложены файлы likes.sql и vk_dz6_task_2.sql
+3. Определить кто больше поставил лайков (всего) - мужчины или женщины?
+    SELECT 
+        IF (
+            (SELECT COUNT(*) FROM likes
+                WHERE user_id IN (SELECT user_id FROM profiles WHERE gender = 'f')
+                ) >
+            (SELECT COUNT(*) FROM likes 
+                WHERE user_id IN (SELECT user_id FROM profiles WHERE gender = 'm')),
+            'f', 'm'
+            ) AS likes_champion
+    ;
+    +----------------+
+    | likes_champion |
+    +----------------+
+    | f              |
+    +----------------+
+    1 row in set (0,00 sec)
+4. Подсчитать общее количество лайков десяти самым молодым пользователям (сколько лайков получили 10 самых молодых пользователей).
+    Смог только частично сделать, до конца не осилил:
+    SELECT 
+	(SELECT user_id FROM profiles WHERE user_id = likes.target_id ORDER BY birthday DESC LIMIT 10), 
+	COUNT(*) 
+    FROM likes WHERE 
+	target_type_id = (
+			SELECT id FROM target_types WHERE name = 'users'
+		) GROUP BY target_id
+    ;
+
+5. Найти 10 пользователей, которые проявляют наименьшую активность в использовании социальной сети
+(критерии активности необходимо определить самостоятельно).
+    Критерий активности: активность считается за последние 30 дней. Если за последние 30 дней не было никаких действий пользователя - значит активность равна 0. На активность влияют следующие факторы:
+        1) Количество лайков, поставленных за последние 30 дней. Вес данного фактора определим как w_likes = 0.25
+        2) Количество медиа-файлов, выложенных за последний 30 дней. Вес данного фактора определим как w_media = 0.25
+        3) Количество дружественных связей, заведенных за последние 30 дней. Вес данного фактора определим как w_friends = 0.25
+        4) Количество групп, в которые вступил пользователь за последние 30 дней. Вес данного фактора определим как w_communities = 0.25
+        
+    1) Возьмем количество лайков, поставленных пользователем, за последние 30 дней, за user_likes_num.
+    Возьмем общее количество лайков, поставленных всеми пользователями за 30 дней, за all_users_likes_num. Показатель активности по лайкам будет вычисляться выражением (user_likes_num/all_users_likes_num)*w_likes
+    2) По аналогии с пунктом 1, Показатель активности по медиа будет вычисляться выражением (user_media_num/all_users_media_num)*w_media
+    3) Показатель активности по дружбе будет вычисляться выражением (user_friendship_num/all_friendship_num)*w_friends
+    4) Показатель активности по группам будет вычисляться выражением (user_join_communities_num/all_join_communities_num)*w_communities
+    
+    Общая активность будет вычисляться как сумма всех показателей (Успел сделать только для первых двух факторов)
+    SELECT 
+	id, 
+	(IFNULL((SELECT  
+		(COUNT(*) * 0.25) /(SELECT COUNT(*) FROM likes WHERE TO_DAYS(NOW()) - TO_DAYS(created_at) < 31) 
+	FROM likes 
+		WHERE (TO_DAYS(NOW()) - TO_DAYS(created_at) < 31) AND (user_id = users.id)
+			GROUP BY user_id 
+	),0) +
+	(IFNULL((SELECT 
+	(COUNT(*) * 0.25) / (SELECT COUNT(*) FROM media WHERE TO_DAYS(NOW()) - TO_DAYS(updated_at) < 31)
+		AS factor_likes
+	FROM media
+		WHERE (TO_DAYS(NOW()) - TO_DAYS(updated_at) < 31) AND (user_id = users.id)
+			GROUP BY user_id
+	),0))) AS media_likes_factor
+	FROM users ORDER BY media_likes_factor LIMIT 10;
