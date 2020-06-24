@@ -103,7 +103,7 @@ ALTER TABLE products
 
 ALTER TABLE products DROP FOREIGN KEY products_catalog_id_fk;
 
-SELECT * FROM products p ;
+SELECT * FROM products ;
 SELECT * FROM orders;
 SELECT * FROM orders_products;
 
@@ -114,8 +114,68 @@ SELECT DISTINCT(users.id), users.name
 	FROM
 		users JOIN orders 
 	ON users.id = orders.user_id 
+	
+SELECT * FROM products;
+SELECT * FROM catalogs;
+
+SELECT products.name, catalogs.name 
+FROM products JOIN catalogs
+ON products.catalog_id = catalogs.id
+	ORDER BY products.name;
 
 
+DROP TABLE IF EXISTS flights;
+CREATE TABLE flights (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  city_from VARCHAR(255) COMMENT 'Откуда',
+  city_to VARCHAR(255) COMMENT 'Куда'
+) COMMENT = 'Полеты';
+
+DROP TABLE IF EXISTS cities;
+CREATE TABLE cities (
+  label VARCHAR(255) COMMENT 'English',
+  name VARCHAR(255) COMMENT 'Русский'
+) COMMENT = 'Города';
+
+INSERT INTO flights(city_from, city_to) VALUES 
+('moscow', 'omsk'),
+('novgorod', 'kazan'),
+('irkutsk', 'moscow'),
+('omsk', 'irkutsk'),
+('moscow', 'kazan')
+;
+
+SELECT * FROM flights ;
+
+INSERT INTO cities(label, name) VALUES 
+('moscow', 'Москва'),
+('irkutsk', 'Иркутск'),
+('novgorod', 'Новгород'),
+('kazan', 'Казань'),
+('omsk', 'Омск')
+;
+
+SELECT * FROM cities;
+
+SELECT  , city_to 
+	FROM flights JOIN cities 
+WHERE city_from = 
+;
+
+SELECT 
+	(SELECT name FROM cities WHERE cities.label = flights.city_from ) AS 'from',
+	(SELECT name FROM cities WHERE cities.label = flights.city_to ) AS 'to'
+FROM flights;
+
+
+SELECT c1.name, c2.name
+FROM 
+	cities AS c1
+JOIN 
+	cities AS c2
+JOIN
+	flights AS f
+ON c1.label = f.city_from AND c2.label = f.city_to ;
 
 
 
