@@ -108,9 +108,9 @@ SELECT * FROM orders;
 SELECT * FROM orders_products;
 
 INSERT INTO orders(user_id) VALUES(7);
-INSERT INTO orders_products(order_id, product_id, total) VALUES(2, 6, 7);
+INSERT INTO orders_products(order_id, product_id, total) VALUES(3, 2, 9);
 
-SELECT users.name 
+SELECT DISTINCT(users.id), users.name 
 	FROM
 		users JOIN orders 
 	ON users.id = orders.user_id 
