@@ -26,6 +26,10 @@ SELECT COUNT(*) FROM media WHERE TO_DAYS(NOW()) - TO_DAYS(updated_at) < 31
 
 SELECT * FROM media;
 
+-- Показатель по дружественным связям
+SELECT * FROM friendship ;
+
+
 -- Сумма показателей
 SELECT id FROM users ORDER BY id;
 
