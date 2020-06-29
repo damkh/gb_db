@@ -83,9 +83,13 @@ FROM likes WHERE
 		) GROUP BY target_id
 		;
 	
-SELECT count(*) FROM likes WHERE user_id IN
-(SELECT DISTINCT(user_id) FROM profiles ORDER BY birthday DESC LIMIT 10);
+SELECT COUNT(*) FROM likes WHERE target_id IN
+		(SELECT user_id FROM profiles ORDER BY birthday DESC LIMIT 10);
 
+SELECT COUNT(*) FROM likes WHERE target_id IN
+	(SELECT * FROM 
+		(SELECT user_id FROM profiles ORDER BY birthday DESC LIMIT 10) AS s
+	);
 
 	
 
