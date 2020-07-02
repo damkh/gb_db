@@ -121,6 +121,7 @@ BEGIN
 	RETURN VERSION(); 
 END//
 
+SELECT VERSION();
 
 DELIMITER //
 
@@ -148,6 +149,21 @@ END//
 
 -- SELECT IF(TIME_FORMAT('00:00', '%H:%i') > '23:59', 1, 0);
 
+-- TASK 3.2
+SELECT * FROM products;
+
+-- CREATE TRIGGER name_desc_not_null BEFORE INSERT on products
+-- FOR EACH ROW 
+-- BEGIN 
+-- 	IF (NEW.name IS NULL) AND (NEW.description IS NULL) THEN 
+-- 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'products.name and products.description can not be NULL together';
+--   END IF;
+-- END;
+
+INSERT INTO products (id, name, description , price, catalog_id ) VALUES(NULL, 'product 9_3_1', NULL, 20, 3);
+INSERT INTO products (id, name, description , price, catalog_id ) VALUES(NULL, NULL, 'product 9_3_0 DESCRIPTION', 21, 3);
+UPDATE products SET name = NULL WHERE id = 16;
+UPDATE products SET description = NULL WHERE id = 17;
 
 
 
