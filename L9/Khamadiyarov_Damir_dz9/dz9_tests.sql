@@ -165,6 +165,25 @@ INSERT INTO products (id, name, description , price, catalog_id ) VALUES(NULL, N
 UPDATE products SET name = NULL WHERE id = 16;
 UPDATE products SET description = NULL WHERE id = 17;
 
+-- TASK 2.2
+DROP TABLE IF EXISTS accounts;
+CREATE TABLE accounts (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(255) COMMENT 'Имя пользователя',
+	password  CHAR(32) COMMENT 'Пароли'
+) COMMENT 'Пользователи';
+
+INSERT INTO accounts(name, password) VALUES('Alex', MD5('123456'));
+SELECT * FROM accounts;
+
+DROP VIEW IF EXISTS accounts_list;
+CREATE VIEW accounts_list AS
+SELECT accounts.id AS account_id, accounts.name AS account_name
+FROM accounts;
+
+SELECT * FROM accounts_list;
+
+
 
 
 
