@@ -1,0 +1,166 @@
+Практическое задание по теме “Администрирование MySQL” (эта тема изучается по вашему желанию)
+1) Создайте двух пользователей которые имеют доступ к базе данных shop. Первому пользователю shop_read должны быть доступны только запросы на чтение данных, второму пользователю shop — любые операции в пределах базы данных shop.
+    Создадим пользователей:
+    mysql> CREATE USER shop IDENTIFIED BY '123456';
+    Query OK, 0 rows affected (0,01 sec)
+
+    mysql> CREATE USER shop_read IDENTIFIED BY '123456';
+    Query OK, 0 rows affected (0,03 sec)
+    
+    Проверим наличие новых пользователей:
+    mysql> SELECT Host, User FROM user;
+    +-----------+------------------+
+    | Host      | User             |
+    +-----------+------------------+
+    | %         | shop             |
+    | %         | shop_read        |
+    | localhost | mysql.infoschema |
+    | localhost | mysql.session    |
+    | localhost | mysql.sys        |
+    | localhost | root             |
+    +-----------+------------------+
+    6 rows in set (0,00 sec)
+    
+    Назначим права пользователю shop_read:
+    mysql> GRANT SELECT ON shop.* TO shop_read;
+    Query OK, 0 rows affected (0,02 sec)
+    
+    Войдем под пользователем shop_read, проверим привилегии:
+    mysql -u shop_read -p
+    Enter password:
+    
+    mysql> SHOW GRANTS;
+    +---------------------------------------------+
+    | Grants for shop_read@%                      |
+    +---------------------------------------------+
+    | GRANT USAGE ON *.* TO `shop_read`@`%`       |
+    | GRANT SELECT ON `shop`.* TO `shop_read`@`%` |
+    +---------------------------------------------+
+    2 rows in set (0,00 sec)
+    
+    Попробуем считать данные из базы shop:
+    mysql> USE shop;
+    Reading table information for completion of table and column names
+    You can turn off this feature to get a quicker startup with -A
+    
+    mysql> SELECT * FROM products LIMIT 2;
+    +----+-----------+-------------------------+-------+------------+---------------------+---------------------+
+    | id | name      | description             | price | catalog_id | created_at          | updated_at          |
+    +----+-----------+-------------------------+-------+------------+---------------------+---------------------+
+    |  1 | product 1 | product 1 description 1 |   101 |          1 | NULL                | 2020-07-01 10:00:31 |
+    |  2 | product 2 | product 2 description 2 |   102 |          1 | 2018-08-01 08:11:29 | 2020-07-01 10:00:07 |
+    +----+-----------+-------------------------+-------+------------+---------------------+---------------------+
+    2 rows in set (0,00 sec)
+    
+    Попробуем записать данные:
+    mysql> INSERT INTO products (id, name, description, price, catalog_id ) VALUES(NULL, 'product 9_2_1', 'description 9_2_1', 23, 3);
+    ERROR 1142 (42000): INSERT command denied to user 'shop_read'@'localhost' for table 'products'
+    
+    Назначим права пользователю shop:
+    mysql> GRANT ALL ON shop.* TO shop;
+    Query OK, 0 rows affected (0,00 sec)
+
+    Войдем под пользователем shop, проверим привилегии:
+    mysql -u shop -p
+    Enter password: 
+
+    mysql> SHOW GRANTS;
+    +------------------------------------------------+
+    | Grants for shop@%                              |
+    +------------------------------------------------+
+    | GRANT USAGE ON *.* TO `shop`@`%`               |
+    | GRANT ALL PRIVILEGES ON `shop`.* TO `shop`@`%` |
+    +------------------------------------------------+
+    2 rows in set (0,00 sec)
+    
+    Попробуем записать данные:
+    mysql> INSERT INTO products (id, name, description, price, catalog_id ) VALUES(NULL, 'product 9_2_1', 'description 9_2_1', 23, 3);
+    Query OK, 1 row affected (0,00 sec)
+
+    mysql> SELECT * FROM products ORDER BY id DESC LIMIT 1;
+    +----+---------------+-------------------+-------+------------+---------------------+---------------------+
+    | id | name          | description       | price | catalog_id | created_at          | updated_at          |
+    +----+---------------+-------------------+-------+------------+---------------------+---------------------+
+    | 18 | product 9_2_1 | description 9_2_1 |    23 |          3 | 2020-07-03 07:29:16 | 2020-07-03 07:29:16 |
+    +----+---------------+-------------------+-------+------------+---------------------+---------------------+
+    1 row in set (0,00 sec)
+    
+
+2) (по желанию) Пусть имеется таблица accounts содержащая три столбца id, name, password, содержащие первичный ключ, имя пользователя и его пароль. Создайте представление username таблицы accounts, предоставляющий доступ к столбца id и name. Создайте пользователя user_read, который бы не имел доступа к таблице accounts, однако, мог бы извлекать записи из представления username.
+    Создадим таблицу accounts и внесем туда данные:
+    DROP TABLE IF EXISTS accounts;
+    CREATE TABLE accounts (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) COMMENT 'Имя пользователя',
+        password  CHAR(32) COMMENT 'Пароли'
+    ) COMMENT 'Пользователи';
+    
+    Проверим наличие данных:
+    mysql> SELECT * FROM accounts;
+    +----+-------+----------------------------------+
+    | id | name  | password                         |
+    +----+-------+----------------------------------+
+    |  1 | Alex  | e10adc3949ba59abbe56e057f20f883e |
+    |  2 | Max   | 96e79218965eb72c92a549dd5a330112 |
+    |  3 | John  | e3ceb5881a0a1fdaad01296d7554868d |
+    |  4 | Hanna | 1a100d2c0dab19c4430e7d73762b3423 |
+    +----+-------+----------------------------------+
+    4 rows in set (0,00 sec)
+    
+    Создадим представление username:
+    mysql> CREATE VIEW username AS
+        -> SELECT accounts.id AS account_id, accounts.name AS account_name
+        -> FROM accounts;
+    Query OK, 0 rows affected (0,01 sec)
+    
+    Проверим работоспособность представления:
+    mysql> SELECT * FROM username;
+    +------------+--------------+
+    | account_id | account_name |
+    +------------+--------------+
+    |          1 | Alex         |
+    |          2 | Max          |
+    |          3 | John         |
+    |          4 | Hanna        |
+    +------------+--------------+
+    4 rows in set (0,00 sec)
+    
+    Создадим пользователя user_read и назначим ему права на чтение представления username:
+    mysql> CREATE USER user_read IDENTIFIED BY '123456';
+    Query OK, 0 rows affected (0,01 sec)
+    
+    mysql> GRANT SELECT ON shop.username TO user_read;
+    Query OK, 0 rows affected (0,01 sec)
+    
+    Войдем под пользователем user_read и проверим привилегии:
+    mysql -u user_read -p
+    Enter password: 
+    
+    mysql> SHOW GRANTS;
+    +-----------------------------------------------------------+
+    | Grants for user_read@%                                    |
+    +-----------------------------------------------------------+
+    | GRANT USAGE ON *.* TO `user_read`@`%`                     |
+    | GRANT SELECT ON `shop`.`username` TO `user_read`@`%` |
+    +-----------------------------------------------------------+
+    2 rows in set (0,00 sec)
+    
+    Попробуем считать данные:
+    mysql> USE shop;
+    Reading table information for completion of table and column names
+    You can turn off this feature to get a quicker startup with -A
+
+    Database changed
+    mysql> SELECT * FROM accounts;
+    ERROR 1142 (42000): SELECT command denied to user 'user_read'@'localhost' for table 'accounts'
+    
+    mysql> SELECT * FROM username;
+    +------------+--------------+
+    | account_id | account_name |
+    +------------+--------------+
+    |          1 | Alex         |
+    |          2 | Max          |
+    |          3 | John         |
+    |          4 | Hanna        |
+    +------------+--------------+
+    4 rows in set (0,00 sec)
