@@ -1,0 +1,149 @@
+Практическое задание по теме “Хранимые процедуры и функции, триггеры"
+1. Создайте хранимую функцию hello(), которая будет возвращать приветствие, в зависимости от текущего времени суток. С 6:00 до 12:00 функция должна возвращать фразу "Доброе утро", с 12:00 до 18:00 функция должна возвращать фразу "Добрый день", с 18:00 до 00:00 — "Добрый вечер", с 00:00 до 6:00 — "Доброй ночи".
+    Создадим функцию:
+    DELIMITER //
+    DROP FUNCTION IF EXISTS hello//
+    CREATE FUNCTION hello (curr_time TIME)
+    RETURNS VARCHAR(255) DETERMINISTIC
+    BEGIN
+        DECLARE hello_phrase TEXT;
+    IF (curr_time >= '06:00' AND curr_time <= '11:59:59.999999') THEN
+        SET hello_phrase = 'Доброе утро';
+    ELSEIF (curr_time >= '12:00' AND curr_time <= '17:59:59.999999') THEN
+        SET hello_phrase = 'Добрый день';
+    ELSEIF (curr_time >= '18:00' AND curr_time <= '23:59:59.999999') THEN
+        SET hello_phrase = 'Добрый вечер';
+    ELSEIF (curr_time >= '00:00' AND curr_time <= '05:59:59.999999') THEN
+        SET hello_phrase = 'Доброй ночи';
+        END IF;
+        RETURN hello_phrase;
+    END//
+    
+    Проверим работу функции:
+    mysql> SELECT hello(CURRENT_TIME());
+    +-------------------------+
+    | hello(CURRENT_TIME())   |
+    +-------------------------+
+    | Добрый вечер            |
+    +-------------------------+
+    1 row in set (0,00 sec)
+
+    mysql> SELECT hello('05:30');
+    +-----------------------+
+    | hello('05:30')        |
+    +-----------------------+
+    | Доброй ночи           |
+    +-----------------------+
+    1 row in set (0,00 sec)
+
+    mysql> SELECT hello('10:15');
+    +-----------------------+
+    | hello('10:15')        |
+    +-----------------------+
+    | Доброе утро           |
+    +-----------------------+
+    1 row in set (0,00 sec)
+
+    mysql> SELECT hello('15:40:12');
+    +-----------------------+
+    | hello('15:40:12')     |
+    +-----------------------+
+    | Добрый день           |
+    +-----------------------+
+    1 row in set (0,00 sec)
+
+    mysql> SELECT hello('21:45:16.444322');
+    +--------------------------+
+    | hello('21:45:16.444322') |
+    +--------------------------+
+    | Добрый вечер             |
+    +--------------------------+
+    1 row in set (0,00 sec)
+
+
+2. В таблице products есть два текстовых поля: name с названием товара и description с его описанием. Допустимо присутствие обоих полей или одно из них. Ситуация, когда оба поля принимают неопределенное значение NULL неприемлема. Используя триггеры, добейтесь того, чтобы одно из этих полей или оба поля были заполнены. При попытке присвоить полям NULL-значение необходимо отменить операцию.
+    Создадим 2 триггера перед операциями INSERT и UPDATE:
+    DROP TRIGGER IF EXISTS name_desc_not_null_insert;
+    DROP TRIGGER IF EXISTS name_desc_not_null_update;
+    DELIMITER //
+
+    CREATE TRIGGER name_desc_not_null_insert BEFORE INSERT ON products
+    FOR EACH ROW 
+    BEGIN 
+        IF (NEW.name IS NULL) AND (NEW.description IS NULL) THEN 
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'products.name and products.description can not be NULL together';
+    END IF;
+    END//
+
+    CREATE TRIGGER name_desc_not_null_update BEFORE UPDATE ON products
+    FOR EACH ROW 
+    BEGIN 
+        IF (NEW.name IS NULL) AND (NEW.description IS NULL) THEN 
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'products.name and products.description can not be NULL together';
+    END IF;
+    END//
+    
+    Проверим работу триггеров, попробуем свставить нвоую строку с NULL в стобцах name и description:
+    mysql> INSERT INTO products (id, name, description , price, catalog_id ) VALUES(NULL, NULL, NULL, 22, 3);
+    ERROR 1644 (45000): products.name and products.description can not be NULL together
+    
+    Выведем текущее содержимое таблицы products:
+    mysql> SELECT * FROM products WHERE id > 10;
+    +----+---------------+---------------------------+-------+------------+---------------------+---------------------+
+    | id | name          | description               | price | catalog_id | created_at          | updated_at          |
+    +----+---------------+---------------------------+-------+------------+---------------------+---------------------+
+    | 11 | AMD FX-8320E  | Процессор Intel           |  4780 |          1 | 2020-06-24 07:51:47 | 2020-06-24 12:03:12 |                                          
+    | 12 | AMD FX-8320   | Процессор Intel           |  7120 |          1 | 2020-06-24 07:51:47 | 2020-06-24 12:03:12 |                                          
+    | 16 | product 9_3_1 | NULL                      |    20 |          3 | 2020-07-02 06:28:54 | 2020-07-02 06:30:50 |                                          
+    | 17 | NULL          | product 9_3_0 DESCRIPTION |    21 |          3 | 2020-07-02 06:29:56 | 2020-07-02 06:29:56 |
+    +----+---------------+---------------------------+-------+------------+---------------------+---------------------+
+    4 rows in set (0,00 sec)
+    
+    Попробуем обнулить столбец name для строки с id = 16:
+    mysql> UPDATE products SET name = NULL WHERE id = 16;
+    ERROR 1644 (45000): products.name and products.description can not be NULL together
+    
+    Попробуем обнулить столбец description для строки с id = 17:
+    mysql> UPDATE products SET description = NULL WHERE id = 17;
+    ERROR 1644 (45000): products.name and products.description can not be NULL together
+
+3. (по желанию) Напишите хранимую функцию для вычисления произвольного числа Фибоначчи. Числами Фибоначчи называется последовательность в которой число равно сумме двух предыдущих чисел. Вызов функции FIBONACCI(10) должен возвращать число 55.
+    Создадим функцию:
+    DROP FUNCTION IF EXISTS FIBONACCI;
+    DELIMITER //
+
+    CREATE FUNCTION FIBONACCI (num INT)
+    RETURNS INT DETERMINISTIC
+    BEGIN
+        DECLARE fib0 INT DEFAULT 0;
+        DECLARE fib1 INT DEFAULT 1;
+        DECLARE fib INT;
+        DECLARE i INT DEFAULT 1;
+        
+        IF num = 0 THEN
+            RETURN fib0;
+        END IF;
+        IF num = 1 THEN
+            RETURN fib1;
+        END IF;
+        
+        WHILE i < num DO
+            SET i = i + 1;
+        SET fib = fib0 + fib1;
+        SET fib0 = fib1;
+        SET fib1 = fib;
+    END WHILE;
+        RETURN fib;
+    END//
+    
+    Проверим работу функции:
+    mysql> SELECT FIBONACCI(0),FIBONACCI(1),FIBONACCI(2),FIBONACCI(3),FIBONACCI(4),FIBONACCI(5),FIBONACCI(6),FIBONACCI(7),FIBONACCI(8),FIBONACCI(9),FIBONACCI(10);
+    +--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+---------------+
+    | FIBONACCI(0) | FIBONACCI(1) | FIBONACCI(2) | FIBONACCI(3) | FIBONACCI(4) | FIBONACCI(5) | FIBONACCI(6) | FIBONACCI(7) | FIBONACCI(8) | FIBONACCI(9) | FIBONACCI(10) |
+    +--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+---------------+
+    |            0 |            1 |            1 |            2 |            3 |            5 |            8 |           13 |           21 |           34 |            55 |
+    +--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+---------------+
+    1 row in set (0,00 sec)
+
+
+ 
