@@ -1,0 +1,146 @@
+1) Проанализировать, какие запросы могут выполняться наиболее часто в процессе работы приложени и добавить необходимые индексы
+    1.1) На все стобцы, помеченные как UNIQUE при создании таблиц, индексы создаются автоматически. Например, столбцы phone и email уже имеют уникальные индексы:
+    mysql> SHOW INDEX FROM users;                                                                                                                         
+    +-------+------------+--------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+    | Table | Non_unique | Key_name                 | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment | Visible | Expression |
+    +-------+------------+--------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+    | users |          0 | PRIMARY                  |            1 | id          | A         |         200 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+    | users |          0 | email                    |            1 | email       | A         |         200 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+    | users |          0 | phone                    |            1 | phone       | A         |         200 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+    | users |          1 | users_user_status_fk     |            1 | user_status | A         |           3 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+    +-------+------------+--------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+         
+    6 rows in set (0,00 sec)
+    
+    
+    1.2) При входе в систему будет проверяться соответсвие email паролю пользователя. Пример такого запроса:
+    SELECT id, email, password 
+ 	FROM users
+ 		WHERE users.email = 'skiles.william@example.org' AND users.password = MD5('123456');
+    
+    Поэтому создадим индекс:
+    CREATE UNIQUE INDEX users_email_password_idx ON users(email, password);
+    
+    1.3) Соц.сеть будет уведомлять своих пользователей о новых заявках в друзья. Поэтому будет выполняться запрос на поиск пользователя, у которого есть входящие заявки в друзья. Пример такого запроса:
+    SELECT friendship.friend_id, friendship.status_id 
+        FROM 
+            friendship 
+                JOIN
+            friendship_statuses 
+        ON friendship_statuses.id = friendship.status_id AND friendship_statuses.name = 'pending'
+        ORDER BY friendship.friend_id;
+        
+    Поэтому создадим индекс:
+    CREATE INDEX friendship_friend_id_status_id ON friendship(friend_id, status_id);
+    
+    1.4) В личном кабинете пользователя должны отображаться все его чаты, пример запрос для пользователя с id=59:
+    SELECT from_user_id + to_user_id - 59 AS chat_with FROM messages
+        WHERE (from_user_id = 59 OR to_user_id = 59);
+    Поможет ли при этом составной индекс?
+    CREATE INDEX messages_from_user_id_to_user_id_idx ON messages(from_user_id, to_user_id);
+    
+    1.5) Для отображения чата с конкретным пользователем необходимо выгрузить всю историю сообщений. Пример такого запроса ():
+    SELECT * FROM messages 
+        WHERE (from_user_id = 74 AND to_user_id = 59) OR (from_user_id = 59 AND to_user_id = 74)
+        ORDER BY created_at DESC;
+    Но в данном случае индекс думаю не нужен, так как обычно состояние переписки меняется быстро, и индексирование не будет успевать за изменением переписки. Лучше ограничить запрос определенным количеством последних сообщений.
+    
+    1.6) Для отображения медиа пользователя создами индекс для столбцов user_id и media_type_id:
+    CREATE INDEX media_media_id_media_type_ip ON media(user_id,media_type_id);
+    
+    Общий список индексов для базы vk:
+    mysql> SELECT DISTINCT
+        -> TABLE_NAME,
+        -> INDEX_NAME
+        -> FROM INFORMATION_SCHEMA.STATISTICS
+        -> WHERE TABLE_SCHEMA = 'vk';
+    +---------------------+--------------------------------+
+    | TABLE_NAME          | INDEX_NAME                     |
+    +---------------------+--------------------------------+
+    | communities         | name                           |
+    | communities         | PRIMARY                        |
+    | communities_users   | community_users_user_id_fk     |
+    | communities_users   | PRIMARY                        |
+    | friendship          | friendship_friend_id_status_id |
+    | friendship          | friendship_status_id_fk        |
+    | friendship          | PRIMARY                        |
+    | friendship_statuses | name                           |
+    | friendship_statuses | PRIMARY                        |
+    | likes               | likes_target_type_id_fk        |
+    | likes               | likes_user_id_fk               |
+    | likes               | PRIMARY                        |
+    | media               | media_media_id_media_type_ip   |
+    | media               | media_media_type_id_fk         |
+    | media               | PRIMARY                        |
+    | media_types         | name                           |
+    | media_types         | PRIMARY                        |
+    | messages            | messages_from_user_id_fk       |
+    | messages            | messages_media_id_fk           |
+    | messages            | messages_to_user_id_fk         |
+    | messages            | PRIMARY                        |
+    | profiles            | PRIMARY                        |
+    | profiles            | profiles_photo_id_fk           |
+    | target_types        | name                           |
+    | target_types        | PRIMARY                        |
+    | user_statuses       | name                           |
+    | user_statuses       | PRIMARY                        |
+    | users               | email                          |
+    | users               | phone                          |
+    | users               | PRIMARY                        |
+    | users               | users_email_password_idx       |
+    | users               | users_user_status_fk           |
+    +---------------------+--------------------------------+
+    32 rows in set (0,00 sec)
+
+
+    
+2. Задание на оконные функции
+    Построить запрос, который будет выводить следующие столбцы:
+        имя группы
+        среднее количество пользователей в группах
+        самый молодой пользователь в группе
+        самый старший пользователь в группе
+        общее количество пользователей в группе
+        всего пользователей в системе
+        отношение в процентах (общее количество пользователей в группе / всего пользователей в системе) * 100
+        
+    SELECT
+        DISTINCT communities.name,
+        COUNT(communities_users.user_id) OVER () / (SELECT COUNT(*) FROM communities) AS avg_in_groups,
+        FIRST_VALUE(communities_users.user_id) OVER (PARTITION BY communities.name ORDER BY profiles.birthday DESC) AS youngest,
+        FIRST_VALUE(communities_users.user_id) OVER (PARTITION BY communities.name ORDER BY profiles.birthday) AS oldest,
+        COUNT(communities_users.user_id) OVER(PARTITION BY communities.name) AS quantity_in_group,
+        (SELECT COUNT(*) FROM users) AS quantity_all,
+        100 * COUNT(communities_users.user_id) OVER (PARTITION BY communities.name) / (SELECT COUNT(*) FROM users) AS '%'
+            FROM communities LEFT JOIN (profiles JOIN communities_users)
+                ON communities.id = communities_users.community_id AND profiles.user_id = communities_users.user_id
+                    WINDOW communities_name_win AS (PARTITION BY communities.name)
+                ORDER BY communities.name;
+    +------------+---------------+----------+--------+-------------------+--------------+--------+
+    | name       | avg_in_groups | youngest | oldest | quantity_in_group | quantity_all | %      |
+    +------------+---------------+----------+--------+-------------------+--------------+--------+
+    | asperiores |        1.9500 |     NULL |   NULL |                 0 |          200 | 0.0000 |
+    | aut        |        1.9500 |     NULL |   NULL |                 0 |          200 | 0.0000 |
+    | corporis   |        1.9500 |      100 |     84 |                 8 |          200 | 4.0000 |
+    | dolore     |        1.9500 |      188 |     11 |                 2 |          200 | 1.0000 |
+    | dolorum    |        1.9500 |     NULL |   NULL |                 0 |          200 | 0.0000 |
+    | est        |        1.9500 |      109 |    109 |                 1 |          200 | 0.5000 |
+    | et         |        1.9500 |     NULL |   NULL |                 0 |          200 | 0.0000 |
+    | expedita   |        1.9500 |       54 |    196 |                 2 |          200 | 1.0000 |
+    | fuga       |        1.9500 |      191 |    191 |                 1 |          200 | 0.5000 |
+    | fugit      |        1.9500 |     NULL |   NULL |                 0 |          200 | 0.0000 |
+    | id         |        1.9500 |      135 |    137 |                 5 |          200 | 2.5000 |
+    | laborum    |        1.9500 |       52 |     52 |                 1 |          200 | 0.5000 |
+    | neque      |        1.9500 |      184 |     64 |                 5 |          200 | 2.5000 |
+    | nihil      |        1.9500 |       74 |     16 |                 5 |          200 | 2.5000 |
+    | occaecati  |        1.9500 |      168 |    108 |                 2 |          200 | 1.0000 |
+    | quaerat    |        1.9500 |       36 |     36 |                 1 |          200 | 0.5000 |
+    | recusandae |        1.9500 |       50 |     50 |                 1 |          200 | 0.5000 |
+    | temporibus |        1.9500 |       99 |    137 |                 4 |          200 | 2.0000 |
+    | ut         |        1.9500 |       60 |     60 |                 1 |          200 | 0.5000 |
+    | voluptatem |        1.9500 |     NULL |   NULL |                 0 |          200 | 0.0000 |
+    +------------+---------------+----------+--------+-------------------+--------------+--------+
+    20 rows in set (0,00 sec)
+
+
+
+
