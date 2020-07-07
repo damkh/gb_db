@@ -42,12 +42,12 @@ CREATE TABLE companies (
 -- ) COMMENT "Сотрудники компаний, связь между пользователями и компаниями";
 
 -- Таблица способов доставки компаний
-DROP TABLE IF EXISTS companies_delivery_methods;
-CREATE TABLE companies_delivery_methods (
+DROP TABLE IF EXISTS delivery_methods;
+CREATE TABLE delivery_methods (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор строки",
   name VARCHAR(150) NOT NULL COMMENT "Название способа доставки",
   company_id INT UNSIGNED COMMENT "Ссылка на компанию, которая добавила способ доставки",
-  delivery_method_status BOOLEAN COMMENT "Статус метода, активен или нет",
+  status BOOLEAN COMMENT "Статус метода, активен или нет",
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT "Время создания строки",  
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT "Время обновления строки"  
 ) COMMENT "Способы доставки компаний";
@@ -95,9 +95,10 @@ CREATE TABLE offers (
 ) COMMENT "Предложения";
 
 -- Таблица файлов
+DROP TABLE IF EXISTS files;
 CREATE TABLE files (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор файла",
-  user_id INT UNSIGNED NOT NULL COMMENT "Ссылка на пользователя, который загрузил файл",
+  company_id INT UNSIGNED COMMENT "Ссылка на компанию, пользователь которой загрузил файл",
   file_path VARCHAR(255) NOT NULL COMMENT "Путь к файлу",
   file_size INT NOT NULL COMMENT "Размер файла",
   metadata JSON COMMENT "Метаданные файла",
@@ -131,16 +132,17 @@ CREATE TABLE offers_files (
 ) COMMENT "Связь между предложениями и прикрепленными файлами";
 
 -- Таблица сделок
+DROP TABLE IF EXISTS deals;
 CREATE TABLE deals (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор сделки",
   provider_company_id INT UNSIGNED NOT NULL COMMENT "Ссылка на компанию-поставщика",
   recipient_company_id INT UNSIGNED NOT NULL COMMENT "Ссылка на компанию-потребителя",
   request_id INT UNSIGNED COMMENT "Ссылка на запрос",
   offer_id INT UNSIGNED COMMENT "Ссылка на предложение",
-  deal_price DECIMAL NOT NULL COMMENT "Цена за услугу или товар в сделке",
+  price DECIMAL NOT NULL COMMENT "Цена за услугу или товар в сделке",
   delivery_method_id INT UNSIGNED  COMMENT "Ссылка на способ доставки",
   delivery_term INT UNSIGNED COMMENT "Срок выполнения",
-  deal_status_id INT UNSIGNED COMMENT "Ссылка на статус сделки",
+  status_id INT UNSIGNED COMMENT "Ссылка на статус сделки",
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT "Время создания строки",
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT "Время обновления строки"
 ) COMMENT "Сделки";
@@ -155,9 +157,10 @@ CREATE TABLE deal_statuses (
 ) COMMENT "Типы статусов сделок";
 
 -- Таблица товаров
+DROP TABLE IF EXISTS products;
 CREATE TABLE products (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор товара",
-	category INT UNSIGNED NOT NULL COMMENT "Ссылка на категорию товара",
+	category_id INT UNSIGNED NOT NULL COMMENT "Ссылка на категорию товара",
   name VARCHAR(255) NOT NULL COMMENT "Название товара",
   description TEXT NOT NULL COMMENT "Описание товара",
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT "Время создания строки",
@@ -165,7 +168,8 @@ CREATE TABLE products (
 ) COMMENT "Товары"
 
 -- Таблица категорий товаров - справочник
-CREATE TABLE product_categories (
+DROP TABLE IF EXISTS product_categories;
+CREATE TABLE products_categories (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор категории товара",
   name VARCHAR(255) NOT NULL UNIQUE COMMENT "Название категории товара",
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT "Время создания строки",  
@@ -184,7 +188,8 @@ CREATE TABLE products_files (
 DROP TABLE users_logs;
 CREATE TABLE users_logs (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор действия",
-  user_id VARCHAR(255) NOT NULL COMMENT "Ссылка на имя пользователя",
+  user_id INT UNSIGNED NOT NULL COMMENT "Ссылка на пользователя",
+  company_id INT UNSIGNED NOT NULL COMMENT "Ссылка на имя пользователя",
   log_type_id INT UNSIGNED NOT NULL COMMENT "Ссылка на номер действия",
   metadata JSON COMMENT "Метаданные пользовательских действий",
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT "Время создания строки",  
