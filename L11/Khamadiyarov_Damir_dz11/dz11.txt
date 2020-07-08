@@ -1,0 +1,178 @@
+Практическое задание по теме “Оптимизация запросов”
+1) Создайте таблицу logs типа Archive. Пусть при каждом создании записи в таблицах users, catalogs и products в таблицу logs помещается время и дата создания записи, название таблицы, идентификатор первичного ключа и содержимое поля name.
+    Создадим таблиц logs типа Archive:
+    CREATE TABLE logs (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор строки", 
+    table_name VARCHAR(100) NOT NULL COMMENT "Имя таблицы",
+    name VARCHAR(100) NOT NULL COMMENT "Содержимое поля name из таблиц users, catalogs и products",
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT "Время создания строки"
+    ) COMMENT="Журнал создания пользователей" ENGINE=Archive; 
+    
+    Создадим триггеры на таблицы users, catalogs и products:
+    DROP TRIGGER IF EXISTS users_insert_logs;
+    DROP TRIGGER IF EXISTS products_insert_logs;
+    DROP TRIGGER IF EXISTS catalogs_insert_logs;
+    DELIMITER //
+
+    CREATE TRIGGER users_insert_logs AFTER INSERT ON users
+    FOR EACH ROW 
+    BEGIN 
+        INSERT INTO logs(table_name, name) VALUES('users', NEW.name);
+    END//
+
+    CREATE TRIGGER products_insert_logs AFTER INSERT ON products
+    FOR EACH ROW 
+    BEGIN 
+        INSERT INTO logs(table_name, name) VALUES('products', NEW.name);
+    END//
+
+    CREATE TRIGGER catalogs_insert_logs AFTER INSERT ON catalogs
+    FOR EACH ROW 
+    BEGIN 
+        INSERT INTO logs(table_name, name) VALUES('catalogs', NEW.name);
+    END//
+    
+    Заведем новые записи в таблицы users, catalogs и products:
+    INSERT INTO users(name, birthday_at) VALUES('Татьяна', DATE('2000-01-01'));
+    INSERT INTO catalogs(name) VALUES('Кабели');
+    INSERT INTO products(name, description, price, catalog_id) VALUES('product_11_1', 'product_11_1 DESCRIPTION', 111, 17);
+    
+    Содержимое таблицы logs:
+    mysql> SELECT * FROM logs;
+    +----+------------+----------------+---------------------+
+    | id | table_name | name           | created_at          |
+    +----+------------+----------------+---------------------+
+    |  1 | users      | Татьяна        | 2020-07-08 07:42:41 |
+    |  2 | catalogs   | Кабели         | 2020-07-08 07:48:44 |
+    |  3 | products   | product_11_1   | 2020-07-08 07:51:13 |
+    +----+------------+----------------+---------------------+
+    3 rows in set (0,00 sec)
+
+2) (по желанию) Создайте SQL-запрос, который помещает в таблицу users миллион записей.
+    INSERT INTO users(name, birthday_at) 
+    SELECT CONCAT('user_', k), DATE(CONCAT(2020 - FLOOR(1 + RAND() * 120),'-',FLOOR(1 + RAND() * 12),'-',FLOOR(1 + RAND() * 28)))
+    FROM
+        (SELECT a1.n + 10 * a2.n + 100 * a3.n + 1000 * a4.n + 10000 * a5.n + 100000 * a6.n AS k
+            FROM
+                (SELECT 9 AS n
+                    UNION SELECT 8 
+                    UNION SELECT 7 
+                    UNION SELECT 6 
+                    UNION SELECT 5 
+                    UNION SELECT 4 
+                    UNION SELECT 3 
+                    UNION SELECT 2 
+                    UNION SELECT 1 
+                    UNION SELECT 0) AS a1
+                    JOIN
+                (SELECT 0 AS n
+                    UNION SELECT 1 
+                    UNION SELECT 2 
+                    UNION SELECT 3 
+                    UNION SELECT 4 
+                    UNION SELECT 5 
+                    UNION SELECT 6 
+                    UNION SELECT 7 
+                    UNION SELECT 8 
+                    UNION SELECT 9) AS a2
+                    JOIN
+                (SELECT 9 AS n
+                    UNION SELECT 8 
+                    UNION SELECT 7 
+                    UNION SELECT 6 
+                    UNION SELECT 5 
+                    UNION SELECT 4 
+                    UNION SELECT 3 
+                    UNION SELECT 2 
+                    UNION SELECT 1 
+                    UNION SELECT 0) AS a3
+                    JOIN
+                (SELECT 0 AS n
+                    UNION SELECT 1 
+                    UNION SELECT 2 
+                    UNION SELECT 3 
+                    UNION SELECT 4 
+                    UNION SELECT 5 
+                    UNION SELECT 6 
+                    UNION SELECT 7 
+                    UNION SELECT 8 
+                    UNION SELECT 9) AS a4
+                    JOIN
+                (SELECT 9 AS n
+                    UNION SELECT 8 
+                    UNION SELECT 7 
+                    UNION SELECT 6 
+                    UNION SELECT 5 
+                    UNION SELECT 4 
+                    UNION SELECT 3 
+                    UNION SELECT 2 
+                    UNION SELECT 1 
+                    UNION SELECT 0) AS a5
+                    JOIN
+                (SELECT 0 AS n
+                    UNION SELECT 1 
+                    UNION SELECT 2 
+                    UNION SELECT 3 
+                    UNION SELECT 4 
+                    UNION SELECT 5 
+                    UNION SELECT 6 
+                    UNION SELECT 7 
+                    UNION SELECT 8 
+                    UNION SELECT 9) AS a6) AS num;
+                    
+    На запрос затратилось около 40 секунд, размер таблицы после 64МБ.
+    Посчитаем количество записей в таблице:
+    mysql> SELECT COUNT(*) FROM users;
+    +----------+
+    | COUNT(*) |
+    +----------+
+    |  1000007 |
+    +----------+
+    1 row in set (0,04 sec)
+    Но есть небольшая странность:
+    mysql> SELECT * FROM users LIMIT 15;
+    +-----+--------------------+-------------+---------------------+---------------------+
+    | id  | name               | birthday_at | created_at          | updated_at          |
+    +-----+--------------------+-------------+---------------------+---------------------+
+    |   2 | Наталья            | 1984-11-12  | 2018-10-20 08:10:00 | 2018-10-20 08:10:00 |
+    |   3 | Александр          | 1985-05-20  | 2016-10-20 08:10:00 | 2016-10-20 08:10:00 |
+    |   4 | Сергей             | 1984-02-14  | 2015-10-20 08:10:00 | 2015-10-20 08:10:00 |
+    |   5 | Иван               | 1998-01-12  | 2014-10-20 08:10:00 | 2014-10-20 08:10:00 |
+    |   6 | Мария              | 1992-08-29  | 2013-10-20 08:10:00 | 2013-10-20 08:10:00 |
+    |   7 | Павел              | 1971-01-01  | 2012-10-20 08:10:00 | 2012-10-20 08:10:00 |
+    |   8 | Татьяна            | 2000-01-01  | 2020-07-08 07:42:41 | 2020-07-08 07:42:41 |
+    | 136 | user_90158         | 1941-10-05  | 2020-07-08 09:21:56 | 2020-07-08 09:21:56 |
+    | 137 | user_90159         | 1986-12-25  | 2020-07-08 09:21:56 | 2020-07-08 09:21:56 |
+    | 138 | user_90160         | 1947-05-27  | 2020-07-08 09:21:56 | 2020-07-08 09:21:56 |
+    | 139 | user_90161         | 1947-03-11  | 2020-07-08 09:21:56 | 2020-07-08 09:21:56 |
+    | 140 | user_90162         | 2009-05-15  | 2020-07-08 09:21:56 | 2020-07-08 09:21:56 |
+    | 141 | user_90163         | 1958-01-15  | 2020-07-08 09:21:56 | 2020-07-08 09:21:56 |
+    | 142 | user_90164         | 1950-04-25  | 2020-07-08 09:21:56 | 2020-07-08 09:21:56 |
+    | 143 | user_90165         | 1973-05-15  | 2020-07-08 09:21:56 | 2020-07-08 09:21:56 |
+    +-----+--------------------+-------------+---------------------+---------------------+
+    15 rows in set (0,01 sec)
+    Почему-то счетчик пользователей началася с 90158
+    Пользователь user_1:
+    mysql> SELECT * FROM users WHERE name='user_1';
+    +--------+--------+-------------+---------------------+---------------------+
+    | id     | name   | birthday_at | created_at          | updated_at          |
+    +--------+--------+-------------+---------------------+---------------------+
+    | 181367 | user_1 | 1911-01-16  | 2020-07-08 09:21:56 | 2020-07-08 09:21:56 |
+    +--------+--------+-------------+---------------------+---------------------+
+    1 row in set (0,28 sec)
+
+    mysql> SELECT * FROM users WHERE name='user_90157';
+    +-------+------------+-------------+---------------------+---------------------+
+    | id    | name       | birthday_at | created_at          | updated_at          |
+    +-------+------------+-------------+---------------------+---------------------+
+    | 20045 | user_90157 | 1963-04-27  | 2020-07-08 09:21:56 | 2020-07-08 09:21:56 |
+    +-------+------------+-------------+---------------------+---------------------+
+    1 row in set (0,28 sec)
+
+
+
+Практическое задание по теме “NoSQL”
+1) В базе данных Redis подберите коллекцию для подсчета посещений с определенных IP-адресов.
+2) При помощи базы данных Redis решите задачу поиска имени пользователя по электронному адресу и наоборот, поиск электронного адреса пользователя по его имени.
+3) Организуйте хранение категорий и товарных позиций учебной базы данных shop в СУБД MongoDB.
+ 
