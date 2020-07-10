@@ -173,6 +173,142 @@
 
 Практическое задание по теме “NoSQL”
 1) В базе данных Redis подберите коллекцию для подсчета посещений с определенных IP-адресов.
+    Вариант 1. 
+    Хранить в базе ключи - ip-адреса, в их значения записывать каждый раз инкремент:
+    127.0.0.1:6379> KEYS *
+    127.0.0.1:6379> KEYS *
+    1) "192.1.80.1"
+    2) "2.2.2.2"
+    3) "1.1.1.1"
+    4) "1.1.80.1"
+    127.0.0.1:6379> INCR 2.2.2.2
+    (integer) 2
+    127.0.0.1:6379> INCR 3.3.3.3
+    (integer) 1
+    127.0.0.1:6379> INCR 1.1.1.1
+    (integer) 4
+    127.0.0.1:6379> KEYS *
+    1) "192.1.80.1"
+    2) "2.2.2.2"
+    3) "3.3.3.3"
+    4) "1.1.1.1"
+    5) "1.1.80.1"
+    127.0.0.1:6379> GET 2.2.2.2
+    "2"
+    127.0.0.1:6379> GET 1.1.1.1
+    "4"
+    
+    Вариант 2. 
+    Создать хеш ключ. Туда заносить ip-адреса (внутренние ключи), в их значения записывать инкремент:
+    127.0.0.1:6379> HINCRBY ips 1.1.1.1 1
+    (integer) 1
+    127.0.0.1:6379> HINCRBY ips 1.1.1.1 1
+    (integer) 2
+    127.0.0.1:6379> HINCRBY ips 1.1.1.1 1
+    (integer) 3
+    127.0.0.1:6379> HINCRBY ips 2.2.2.2 1
+    (integer) 1
+    127.0.0.1:6379> HINCRBY ips 2.2.2.2 1
+    (integer) 2
+    127.0.0.1:6379> HKEYS ips
+    1) "1.1.1.1"
+    2) "2.2.2.2"
+    127.0.0.1:6379> HGETALL ips
+    1) "1.1.1.1"
+    2) "5"
+    3) "2.2.2.2"
+    4) "2"
+    
+    Вариант 3:
+    Хранить в базе ключи-множества, именами которых будут ip-адреса, в их значения записывать каждый раз дату:
+    127.0.0.1:6379> SADD 1.2.3.4 '2020-01-02 23:14:22.231242' '2020-01-03 21:17:22.123123' '2019-02-02 15:14:24.443252' '2010-04-02 21:16:56.959403'
+    (integer) 4
+    127.0.0.1:6379> SADD 12.23.34.45 '2020-01-02 23:14:22.231242' '2020-01-03 21:17:22.123123' '2019-02-02 15:14:24.443252'
+    (integer) 3
+    
+    Для подсчета количества использовать SCARD:
+    127.0.0.1:6379> SCARD 1.2.3.4
+    (integer) 4
+    127.0.0.1:6379> SCARD 12.23.34.45
+    (integer) 3
+
+    
+
 2) При помощи базы данных Redis решите задачу поиска имени пользователя по электронному адресу и наоборот, поиск электронного адреса пользователя по его имени.
+    Вариант 1.
+    Создать хеш с соответствиями Пользователь:Почта
+    127.0.0.1:6379> HGETALL users_mail
+    1) "user1"
+    2) "user1@aaa.com"
+    3) "user2"
+    4) "user2@aaa.com"
+    5) "user4"
+    6) "user3@aaa.com"
+    7) "user5"
+    8) "user32@aaa.com"
+    9) "user3"
+    10) "user234@aaa.com"
+    
+    Поиск почты по имени пользователя:
+    127.0.0.1:6379> HGET users_mail user2
+    "user2@aaa.com"
+    
+    Для поиска имени пользователя по почте можно создать симметричный, где будут записываться данные наоборот Почта:Пользователь. Из минусов тут - место под хранение увеличивается в 2 раза
+
+    Вариант 2.
+    Хранить сконкатенированные значения почты и пользователя в множестве:
+    127.0.0.1:6379> SADD set_users_mail user1:user1@aaa.com user2:user2@aaa.com user4:user3@aaa.com user5:user32@aaa.com user3:user234@aaa.com
+    (integer) 5
+    127.0.0.1:6379> SMEMBERS set_users_mail
+    1) "user4:user3@aaa.com"
+    2) "user1:user1@aaa.com"
+    3) "user5:user32@aaa.com"
+    4) "user2:user2@aaa.com"
+    5) "user3:user234@aaa.com"
+    
+    Поиск производить через SSCAN:
+    127.0.0.1:6379> SSCAN set_users_mail 0 MATCH *:user1@aaa.com
+    1) "0"
+    2) 1) "user1:user1@aaa.com"
+    127.0.0.1:6379> SSCAN set_users_mail 0 MATCH user1:*
+    1) "0"
+    2) 1) "user1:user1@aaa.com"
+
+
+
 3) Организуйте хранение категорий и товарных позиций учебной базы данных shop в СУБД MongoDB.
+    Данные по товарам будем хранить в коллекции products:
+    > db.products.insert({"name": "Intel Core i3-8100", "description": "Процессор Intel", "price": 7800, "catalog": "Процессоры"})
+    WriteResult({ "nInserted" : 1 })
+    
+    ...
+    
+    > db.products.insert({"name": "Product 305", "description": "Product 305 Description", "price": 34450, "catalog": "Видеокарты"})
+    WriteResult({ "nInserted" : 1 })
+    
+    Содержимое коллекции:
+    > db.products.find()
+    { "_id" : ObjectId("5f07f983b8d59d99891406d5"), "name" : "Intel Core i3-8100", "description" : "Процессор Intel", "price" : 7800, "catalog" : "Процессоры" }
+    { "_id" : ObjectId("5f07f9ddb8d59d99891406d6"), "name" : "Intel Core i5-1234", "description" : "Процессор Intel", "price" : 7900, "catalog" : "Процессоры" }
+    { "_id" : ObjectId("5f07f9f2b8d59d99891406d7"), "name" : "Intel Core i7-6666", "description" : "Процессор Intel", "price" : 9040, "catalog" : "Процессоры" }
+    { "_id" : ObjectId("5f07fa04b8d59d99891406d8"), "name" : "Intel Core i9-2131", "description" : "Процессор Intel", "price" : 14300, "catalog" : "Процессоры" }
+    { "_id" : ObjectId("5f07fa1bb8d59d99891406d9"), "name" : "Intel Core i100500-100500", "description" : "Процессор Intel", "price" : 100500, "catalog" : "Процессоры" }
+    { "_id" : ObjectId("5f07fa9eb8d59d99891406da"), "name" : "Product 200", "description" : "Product 200 Description", "price" : 20010, "catalog" : "Кулеры" }
+    { "_id" : ObjectId("5f07faaab8d59d99891406db"), "name" : "Product 205", "description" : "Product 205 Description", "price" : 20015, "catalog" : "Кулеры" }
+    { "_id" : ObjectId("5f07fad1b8d59d99891406dc"), "name" : "Product 300", "description" : "Product 300 Description", "price" : 30000, "catalog" : "Видеокарты" }
+    { "_id" : ObjectId("5f07fadfb8d59d99891406dd"), "name" : "Product 305", "description" : "Product 305 Description", "price" : 34450, "catalog" : "Видеокарты" }
+    
+    Во вложении файл Robomongo.png, в котором так же представлено получившееся содержимое.
+    
+    Например, выведем все товары из категории "Процессоры":
+    > db.products.find({"catalog": "Процессоры"})
+    { "_id" : ObjectId("5f07f983b8d59d99891406d5"), "name" : "Intel Core i3-8100", "description" : "Процессор Intel", "price" : 7800, "catalog" : "Процессоры" }
+    { "_id" : ObjectId("5f07f9ddb8d59d99891406d6"), "name" : "Intel Core i5-1234", "description" : "Процессор Intel", "price" : 7900, "catalog" : "Процессоры" }
+    { "_id" : ObjectId("5f07f9f2b8d59d99891406d7"), "name" : "Intel Core i7-6666", "description" : "Процессор Intel", "price" : 9040, "catalog" : "Процессоры" }
+    { "_id" : ObjectId("5f07fa04b8d59d99891406d8"), "name" : "Intel Core i9-2131", "description" : "Процессор Intel", "price" : 14300, "catalog" : "Процессоры" }
+    { "_id" : ObjectId("5f07fa1bb8d59d99891406d9"), "name" : "Intel Core i100500-100500", "description" : "Процессор Intel", "price" : 100500, "catalog" : "Процессоры" }
+
+
+    
+
  
