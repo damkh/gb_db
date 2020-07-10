@@ -83,11 +83,14 @@ ALTER TABLE products
 	ADD CONSTRAINT products_category_id_fk
 		FOREIGN KEY products(category_id) REFERENCES products_categories(id);
 
+
+-- ALTER TABLE deals
+-- 	DROP CONSTRAINT ;
 ALTER TABLE deals
-	ADD CONSTRAINT deals_provider_company_id_fk
-		FOREIGN KEY deals(provider_company_id) REFERENCES companies(id),
-	ADD CONSTRAINT deals_recipient_company_id_fk
-		FOREIGN KEY deals(recipient_company_id) REFERENCES companies(id),
+	ADD CONSTRAINT deals_company_id_fk
+		FOREIGN KEY deals(company_id) REFERENCES companies(id),
+	ADD CONSTRAINT deals_company_status_in_deal_id_fk
+		FOREIGN KEY deals(company_status_in_deal_id) REFERENCES company_statuses_in_deals(id),
 	ADD CONSTRAINT deals_request_id_fk
 		FOREIGN KEY deals(request_id) REFERENCES requests(id),
 	ADD CONSTRAINT deals_offer_id_fk
@@ -97,12 +100,18 @@ ALTER TABLE deals
 	ADD CONSTRAINT deals_status_id_fk
 		FOREIGN KEY deals(status_id) REFERENCES deal_statuses(id);
 
+-- ALTER TABLE users_logs
+-- 	DROP CONSTRAINT users_logs_user_id_fk;
+-- ALTER TABLE users_logs
+-- 	DROP CONSTRAINT users_logs_company_id_fk;
+-- ALTER TABLE users_logs
+-- 	DROP CONSTRAINT users_logs_log_type_fk;
+
 ALTER TABLE users_logs
 	ADD CONSTRAINT users_logs_user_id_fk
 		FOREIGN KEY users_logs(user_id) REFERENCES users(id),
 	ADD CONSTRAINT users_logs_company_id_fk
 		FOREIGN KEY users_logs(company_id) REFERENCES companies(id),
 	ADD CONSTRAINT users_logs_log_type_fk
-		FOREIGN KEY users_logs(log_type_id) REFERENCES log_types(id)
-	;
+		FOREIGN KEY users_logs(log_type_id) REFERENCES log_types(id);
 
