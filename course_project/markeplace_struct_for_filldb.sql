@@ -1,10 +1,4 @@
-DROP DATABASE IF EXISTS marketplace;
-CREATE DATABASE marketplace;
--- 
--- USE marketplace;
-
 -- Таблица пользователей
-DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор пользовтеля", 
   first_name VARCHAR(100) NOT NULL COMMENT "Имя пользователя",
@@ -20,7 +14,6 @@ CREATE TABLE users (
 
 
 -- Таблица компаний
-DROP TABLE IF EXISTS companies;
 CREATE TABLE companies (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор компании",
   name VARCHAR(150) NOT NULL COMMENT "Название компании",
@@ -36,7 +29,6 @@ CREATE TABLE companies (
 
 
 -- Таблица способов доставки компаний
-DROP TABLE IF EXISTS delivery_methods;
 CREATE TABLE delivery_methods (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор строки",
   name VARCHAR(150) NOT NULL COMMENT "Название способа доставки",
@@ -47,7 +39,6 @@ CREATE TABLE delivery_methods (
 ) COMMENT="Способы доставки компаний";
 
 -- Таблица сфер деятельности компаний - справочник
-DROP TABLE IF EXISTS business_lines ;
 CREATE TABLE business_lines (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор сферы деятельности",
   name VARCHAR(150) NOT NULL UNIQUE COMMENT "Название сферы деятельности",
@@ -56,7 +47,6 @@ CREATE TABLE business_lines (
 ) COMMENT="Сферы дейтельности компаний";
 
 -- Таблица связи компаний и сфер деятельности
-DROP TABLE IF EXISTS companies_business_lines ;
 CREATE TABLE companies_business_lines (
   company_id INT UNSIGNED NOT NULL COMMENT "Ссылка на компанию",
   business_line_id INT UNSIGNED NOT NULL COMMENT "Ссылка на сферу деятельности",
@@ -65,7 +55,6 @@ CREATE TABLE companies_business_lines (
 ) COMMENT="Связь между компаниями и сферами деятельности";
 
 -- Таблица запросов
-DROP TABLE IF EXISTS requests;
 CREATE TABLE requests (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор строки",
   company_id INT UNSIGNED NOT NULL COMMENT "Ссылка на компанию-инициатора запроса",
@@ -78,7 +67,6 @@ CREATE TABLE requests (
 ) COMMENT="Запросы";
 
 -- Таблица предложений
-DROP TABLE IF EXISTS offers;
 CREATE TABLE offers (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор строки",
   company_id INT UNSIGNED NOT NULL COMMENT "Ссылка на компанию-инициатора предложения",
@@ -93,7 +81,6 @@ CREATE TABLE offers (
 
 
 -- Таблица файлов
-DROP TABLE IF EXISTS files;
 CREATE TABLE files (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор файла",
   company_id INT UNSIGNED COMMENT "Ссылка на компанию, пользователь которой загрузил файл",
@@ -106,7 +93,6 @@ CREATE TABLE files (
 ) COMMENT="Файлы";
 
 -- Таблица типов файлов - справочник
-DROP TABLE IF EXISTS file_types;
 CREATE TABLE file_types (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор типа файла",
   name VARCHAR(255) NOT NULL UNIQUE COMMENT "Название типа",
@@ -115,7 +101,6 @@ CREATE TABLE file_types (
 ) COMMENT="Типы файлов";
 
 -- Таблица связей запросов и файлов
-DROP TABLE IF EXISTS requests_files;
 CREATE TABLE requests_files (
   request_id INT UNSIGNED NOT NULL COMMENT "Ссылка на запрос",
   file_id INT UNSIGNED NOT NULL COMMENT "Ссылка на файл",
@@ -124,7 +109,6 @@ CREATE TABLE requests_files (
 ) COMMENT="Связь между запросами и прикрепленными файлами";
 
 -- Таблица связей предложений и файлов
-DROP TABLE IF EXISTS offers_files;
 CREATE TABLE offers_files (
   offer_id INT UNSIGNED NOT NULL COMMENT "Ссылка на предложение",
   file_id INT UNSIGNED NOT NULL COMMENT "Ссылка на файл",
@@ -133,7 +117,6 @@ CREATE TABLE offers_files (
 ) COMMENT="Связь между предложениями и прикрепленными файлами";
 
 -- Таблица сделок (заказов)
-DROP TABLE IF EXISTS deals;
 CREATE TABLE deals (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор сделки",
   company_id INT UNSIGNED NOT NULL COMMENT "Ссылка на компанию",
@@ -151,7 +134,6 @@ CREATE TABLE deals (
 
 
 -- Таблица статусов сделок - справочник
-DROP TABLE IF EXISTS deal_statuses;
 CREATE TABLE deal_statuses (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор статуса сделки",
   name VARCHAR(255) NOT NULL UNIQUE COMMENT "Название статуса",
@@ -160,19 +142,16 @@ CREATE TABLE deal_statuses (
 ) COMMENT="Типы статусов сделок";
 
 -- Таблица товаров
-DROP TABLE IF EXISTS products;
 CREATE TABLE products (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор товара",
 	category_id INT UNSIGNED NOT NULL COMMENT "Ссылка на категорию товара",
   name VARCHAR(255) NOT NULL COMMENT "Название товара",
   description TEXT NOT NULL COMMENT "Описание товара",
-  company_id INT UNSIGNED NOT NULL COMMENT "Ссылка на компанию",
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT "Время создания строки",
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT "Время обновления строки"
 ) COMMENT="Товары";
 
 -- Таблица категорий товаров - справочник
-DROP TABLE IF EXISTS product_categories;
 CREATE TABLE products_categories (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор категории товара",
   name VARCHAR(255) NOT NULL UNIQUE COMMENT "Название категории товара",
@@ -181,7 +160,6 @@ CREATE TABLE products_categories (
 ) COMMENT="Категории товара";
 
 -- Таблица связей товаров и файлов
-DROP TABLE IF EXISTS products_files;
 CREATE TABLE products_files (
   product_id INT UNSIGNED NOT NULL COMMENT "Ссылка на товар",
   file_id INT UNSIGNED NOT NULL COMMENT "Ссылка на файл",
@@ -190,7 +168,6 @@ CREATE TABLE products_files (
 ) COMMENT="Связь между товарами и прикрепленными файлами";
 
 -- Таблица журналов действий пользователей
-DROP TABLE IF EXISTS users_logs;
 CREATE TABLE users_logs (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор действия",
   user_id INT UNSIGNED NOT NULL COMMENT "id пользователя, совершившего операцию",
