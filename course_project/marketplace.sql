@@ -96,7 +96,6 @@ CREATE TABLE offers (
 DROP TABLE IF EXISTS files;
 CREATE TABLE files (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор файла",
-  company_id INT UNSIGNED COMMENT "Ссылка на компанию, пользователь которой загрузил файл",
   file_path VARCHAR(255) NOT NULL COMMENT "Путь к файлу",
   file_size INT NOT NULL COMMENT "Размер файла",
   metadata JSON COMMENT "Метаданные файла",
@@ -193,10 +192,9 @@ CREATE TABLE products_files (
 DROP TABLE IF EXISTS users_logs;
 CREATE TABLE users_logs (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT "Идентификатор действия",
-  user_id INT UNSIGNED NOT NULL COMMENT "id пользователя, совершившего операцию",
   table_name VARCHAR(256) NOT NULL COMMENT "Имя таблицы",
   id_in_table INT UNSIGNED NOT NULL COMMENT "id в измененной таблице",
   action_type ENUM('DELETE', 'INSERT', 'UPDATE') NOT NULL COMMENT "Тип действия",
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT "Время создания строки",  
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT "Время обновления строки"
-) COMMENT="Логи действий пользователей" ENGINE="Archive";
+) COMMENT="Логи действий" ENGINE="Archive";

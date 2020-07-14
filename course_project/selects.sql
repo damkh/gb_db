@@ -40,3 +40,51 @@ SELECT CONCAT(companies.form," ",companies.name) , COUNT(users.company_id) AS us
 	GROUP BY companies.id
 	ORDER BY users_num;
 	
+-- 5.
+-- Вывести список файлов компании.
+SELECT DISTINCT files.id 
+	FROM 
+	files 
+	JOIN 
+	offers_files 
+	JOIN
+	offers
+ON offers.company_id = 72 AND offers.id = offers_files.offer_id AND offers_files.file_id = files.id
+UNION
+(SELECT DISTINCT files.id 
+	FROM 
+	files 
+	JOIN 
+	requests_files 
+	JOIN
+	requests
+ON requests.company_id = 72 AND requests.id = requests_files.request_id AND requests_files.file_id = files.id)
+UNION 
+(SELECT DISTINCT files.id 
+	FROM 
+	files 
+	JOIN 
+	products_files 
+	JOIN
+	products 
+ON products.company_id = 72 AND products.id = products_files.product_id AND products_files.file_id = files.id)
+;
+
+-- 6.
+-- Найти количество сделок каждой компании, где она являлась получателем (company_status_in_deal='RECIPIENT')
+SELECT 
+	company_id, 
+	COUNT(*) AS total_deals 
+FROM deals 
+WHERE company_status_in_deal='RECIPIENT' 
+GROUP BY company_id;
+
+-- 7.
+-- Найти среднюю цену сделки по каждой компании, в которой компания являлась поставщиком (company_status_in_deal='PROVIDER')
+SELECT 
+	company_id, 
+	AVG(price) AS avg_price
+FROM deals 
+WHERE company_status_in_deal='PROVIDER' 
+GROUP BY company_id; 
+

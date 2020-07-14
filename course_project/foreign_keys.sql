@@ -1,12 +1,7 @@
--- DESC users;
 ALTER TABLE users
 	ADD CONSTRAINT users_company_id_fk
 		FOREIGN KEY users(company_id) REFERENCES companies(id)
 			ON DELETE CASCADE;
-
--- DESC companies_delivery_methods ;
--- ALTER TABLE delivery_methods
--- 	DROP CONSTRAINT delivery_methods_company_id_fk
 
 ALTER TABLE delivery_methods
 	ADD CONSTRAINT delivery_methods_company_id_fk
@@ -21,15 +16,10 @@ ALTER TABLE companies_business_lines
 	ADD CONSTRAINT companies_business_lines_business_line_id_fk
 		FOREIGN KEY companies_business_lines(business_line_id) REFERENCES business_lines(id);
 		
--- DESC requests ;
 ALTER TABLE requests
 	ADD CONSTRAINT requests_company_id_fk
 		FOREIGN KEY requests(company_id) REFERENCES companies(id)
 			ON DELETE CASCADE;
- 
--- ALTER TABLE offers 
--- 	DROP CONSTRAINT offers_company_id_fk,
--- 	DROP CONSTRAINT offers_product_id_fk;
 		
 ALTER TABLE offers
 	ADD CONSTRAINT offers_company_id_fk
@@ -39,11 +29,6 @@ ALTER TABLE offers
 		FOREIGN KEY offers(product_id) REFERENCES products(id)
 			ON DELETE SET NULL;
 
-
-ALTER TABLE files
-	ADD CONSTRAINT files_company_id_fk
-		FOREIGN KEY files(company_id) REFERENCES companies(id)
-			ON DELETE SET NULL;
 
 ALTER TABLE files
 	ADD CONSTRAINT files_file_type_id_fk
@@ -64,10 +49,6 @@ ALTER TABLE requests_files
 	ADD CONSTRAINT requests_files_file_id_fk
 		FOREIGN KEY requests_files(file_id) REFERENCES files(id)
 			ON DELETE CASCADE;
-		
--- ALTER TABLE products_files 
--- 	DROP CONSTRAINT products_files_product_id_fk,
--- 	DROP CONSTRAINT products_files_file_id_fk;
 
 ALTER TABLE products_files
 	ADD CONSTRAINT products_files_product_id_fk
@@ -77,12 +58,11 @@ ALTER TABLE products_files
 		FOREIGN KEY products_files(file_id) REFERENCES files(id)
 			ON DELETE CASCADE;
 
--- ALTER TABLE products 
--- 	DROP CONSTRAINT products_category_id_fk;
 ALTER TABLE products
 	ADD CONSTRAINT products_category_id_fk
-		FOREIGN KEY products(category_id) REFERENCES products_categories(id);
-
+		FOREIGN KEY products(category_id) REFERENCES products_categories(id),
+	ADD CONSTRAINT products_company_id_fk
+		FOREIGN KEY products(company_id) REFERENCES companies(id);
 
 ALTER TABLE deals
 	ADD CONSTRAINT deals_company_id_fk
