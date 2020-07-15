@@ -67,8 +67,7 @@ UNION
 	products_files 
 	JOIN
 	products 
-ON products.company_id = 72 AND products.id = products_files.product_id AND products_files.file_id = files.id)
-;
+ON products.company_id = 72 AND products.id = products_files.product_id AND products_files.file_id = files.id);
 
 -- 6.
 -- Найти количество сделок каждой компании, где она являлась получателем (company_status_in_deal='RECIPIENT')

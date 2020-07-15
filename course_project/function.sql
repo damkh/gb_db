@@ -9,8 +9,8 @@ CREATE FUNCTION year_chash_flow (the_year INT, the_company INT)
 RETURNS FLOAT DETERMINISTIC
 BEGIN
 -- 	USE marketplace;
-	DECLARE incomes FLOAT;
-	DECLARE expenses FLOAT;
+	DECLARE incomes DECIMAL;
+	DECLARE expenses DECIMAL;
 	
 	SET incomes = (
 		SELECT SUM(price) FROM deals WHERE YEAR(complete_date) = 
